@@ -5,8 +5,18 @@
  */
 package com.ipvision.hbaselog;
 
+import com.ipvision.analyzer.hbase.HBaseLogBeanProcessor;
+import com.ipvision.analyzer.hbase.HBaseManager;
 import com.ipvision.analyzer.hbase.HBaseReader;
+import com.ipvision.analyzer.hbase.LogBean;
+import com.ipvision.analyzer.utils.Settings;
 import com.ipvision.analyzer.utils.Tools;
+import com.ipvision.hbaseloganalyzer.ActivityCount;
+import com.ipvision.hbaseloganalyzer.Analyzer;
+import com.ipvision.hbaseloganalyzer.LiveViewerCount;
+import com.ipvision.hbaseloganalyzer.MethodCount;
+import com.ipvision.hbaseloganalyzer.OnlineUserStatus;
+import com.ipvision.hbaseloganalyzer.UserCount;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -14,7 +24,19 @@ import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 import java.util.Properties;
+import org.apache.hadoop.hbase.HTableDescriptor;
+import org.apache.log4j.Logger;
 
 /**
  *
@@ -22,14 +44,16 @@ import java.util.Properties;
  */
 public class HBaseAnalyzerManager {
 
+    private static final Logger logger = Logger.getLogger(HBaseAnalyzerManager.class);
     private final Connection sqlConnection;
+    private List<Analyzer> allAnalyzers = new ArrayList<>();
+    private final String DATE_FORMAT = "yyyyMMddHH";
 
     public HBaseAnalyzerManager(String configFilepath) throws Exception {
         Properties properties = loadProperties(configFilepath);
 
         sqlConnection = createSqlConnection(properties);
-//        sqlConnection.setAutoCommit(false);
-//        sqlConnection.rollback();
+        allAnalyzers = createAnalyzer();
     }
 
     private Properties loadProperties(String filepath) throws Exception {
@@ -74,8 +98,94 @@ public class HBaseAnalyzerManager {
         }
     }
 
-    public void manageAnalyzer() throws IOException, SQLException {
-        HBaseReader hbaseReader = new HBaseReader();
-        hbaseReader.processHBaseTable(sqlConnection);
+    public void manageAnalyzer() throws IOException, SQLException, ParseException {
+
+        processRevisitFeatures();
+        processCurrent();
+
+    }
+
+    private List<Analyzer> createAnalyzer() throws SQLException {
+
+        List<Analyzer> allAnalyzers = new ArrayList<Analyzer>() {
+            {
+                add(new OnlineUserStatus(sqlConnection));
+                add(new MethodCount(sqlConnection));
+                add(new ActivityCount(sqlConnection));
+                add(new UserCount(sqlConnection));
+                add(new LiveViewerCount(sqlConnection));
+
+            }
+        };
+        return allAnalyzers;
+    }
+
+    private void processCurrent() throws SQLException, IOException {
+
+        HTableDescriptor[] tmpTablenNames = HBaseManager.getHBaseManager().getAdmin().listTables(Tools.HBASE_TMP_TABLE_PATTERN);
+        List<LogBean> listLogBean = null;
+        for (HTableDescriptor tmpTablenName : tmpTablenNames) {
+
+            listLogBean = HBaseReader.processHBaseTable(tmpTablenName);
+
+            if (listLogBean != null) {
+                HBaseLogBeanProcessor hbaseLogBeanProcessor = new HBaseLogBeanProcessor();
+                hbaseLogBeanProcessor.processLogBean(listLogBean, allAnalyzers);
+
+            }
+        }
+    }
+
+    private void processRevisitFeatures() throws SQLException, ParseException {
+        Settings settings = new Settings(sqlConnection);
+        Map<String, String> settingMap = settings.getSettingMap();
+
+        String thresholedDaysStr = settingMap.get(Tools.SettingType.THRESHOLD_DAYS);
+        int thresholdDays = (null == thresholedDaysStr) ? 0 : Integer.parseInt(thresholedDaysStr);
+
+        String revisitTimeStr = settingMap.get(Tools.SettingType.REVISIT_TIME);
+        String revisitFeatureStr = settingMap.get(Tools.SettingType.REVISIT_FEATURES);
+
+        if (revisitTimeStr != null && revisitFeatureStr != null) {
+            revisitTimeStr = (revisitTimeStr + "0000000000").substring(0, 10);
+            long startTime = Long.parseLong(revisitTimeStr);
+            long lookbackTime = getLookbackTime(revisitTimeStr, thresholdDays);
+            long endTime = getCurrentDayEndTime();
+
+            Collection<String> features = getFeatures(revisitFeatureStr);
+            try {
+                processArchiveReadFeatures(features, startTime, endTime, lookbackTime);
+            } catch (Exception ex) {
+                logger.error("",ex);
+            }
+
+        }
+    }
+
+    private long getLookbackTime(String revisitTimeStr, int thresholdDays) throws ParseException {
+        DateFormat sdf = new SimpleDateFormat(DATE_FORMAT);
+        Date date = sdf.parse(revisitTimeStr);
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(date);
+        cal.add(Calendar.DATE, -thresholdDays);
+        return Long.parseLong(sdf.format(cal.getTime()));
+    }
+
+    private long getCurrentDayEndTime() {
+        DateFormat sdf = new SimpleDateFormat("yyyyyMMdd");
+        Calendar cal = Calendar.getInstance();
+        cal.add(Calendar.DATE, 1);
+        return Long.parseLong(sdf.format(cal.getTime()) + "00");
+    }
+
+    private Collection<String> getFeatures(String revisitFeatureStr) {
+        Collection<String> list = new ArrayList<>();
+        String[] array = revisitFeatureStr.split(Tools.FEATURE_SEPARTOR);
+        list.addAll(Arrays.asList(array));
+        return list;
+    }
+
+    private void processArchiveReadFeatures(Collection<String> features, long startTime, long endTime, long lookbackTime) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 }

@@ -36,8 +36,6 @@ public class HBaseLogAnalyzerRunner extends Thread {
             try {
                 HBaseAnalyzerManager hbaseAnalyzerManager = new HBaseAnalyzerManager(configFilePath);
                 hbaseAnalyzerManager.manageAnalyzer();
-               // HBaseReader hbaseReader = new HBaseReader();
-                //hbaseReader.tableReader();
             } catch (Exception ex) {
                 logger.warn("Error while process method.", ex);
             }

@@ -6,11 +6,7 @@
 package com.ipvision.analyzer.hbase;
 
 import com.ipvision.analyzer.utils.Tools;
-import com.ipvision.hbaseloganalyzer.Analyzer;
-import com.ipvision.hbaseloganalyzer.MethodCount;
 import java.io.IOException;
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.hadoop.hbase.HTableDescriptor;
@@ -26,33 +22,23 @@ import org.apache.hadoop.hbase.util.Bytes;
  */
 public class HBaseReader {
 
-    public void processHBaseTable(Connection sqlConnection) throws IOException, SQLException {
+    public static List<LogBean> processHBaseTable(HTableDescriptor tmpTablenName) throws IOException {
 
-        List<Analyzer> allAnalyzers = new ArrayList<Analyzer>() {
-            {
-                add(new MethodCount(sqlConnection));
-            }
-        };
-
-        HTableDescriptor[] tmpTablenNames = HBaseManager.getHBaseManager().getAdmin().listTables(Tools.HBASE_TMP_TABLE_PATTERN);
+//        HTableDescriptor[] tmpTablenNames = HBaseManager.getHBaseManager().getAdmin().listTables(Tools.HBASE_TMP_TABLE_PATTERN);
         List<LogBean> listLogBean = null;
-        for (HTableDescriptor tmpTablenName : tmpTablenNames) {
-            listLogBean = new ArrayList<>();
-            if (HBaseManager.getHBaseManager().getAdmin().isTableEnabled(tmpTablenName.getNameAsString())) {
-                listLogBean = readHBaseTable(tmpTablenName.getNameAsString());
-                if (!listLogBean.isEmpty()) {
-                    HBaseManager.getHBaseManager().getAdmin().disableTable(tmpTablenName.getNameAsString());
-                }
-
+        if (HBaseManager.getHBaseManager().getAdmin().isTableEnabled(tmpTablenName.getNameAsString())) {
+            listLogBean = readHBaseTable(tmpTablenName.getNameAsString());
+            if (!listLogBean.isEmpty()) {
+                HBaseManager.getHBaseManager().getAdmin().disableTable(tmpTablenName.getNameAsString());
             }
 
-            processLogBean(allAnalyzers, listLogBean);
-
+            //processLogBean(allAnalyzers, listLogBean);
         }
 
+        return listLogBean;
     }
 
-    private List<LogBean> readHBaseTable(String tableName) throws IOException {
+    private static List<LogBean> readHBaseTable(String tableName) throws IOException {
 
         HTable table = HBaseManager.getHBaseManager().createHTable(tableName);
         ResultScanner scanner = table.getScanner(new Scan());
@@ -85,14 +71,4 @@ public class HBaseReader {
 
     }
 
-    private void processLogBean(List<Analyzer> allAnalyzers, List<LogBean> listLogBean) throws SQLException {
-        
-        for (Analyzer analyzer : allAnalyzers) {
-            analyzer.processLog(listLogBean);
-            analyzer.saveToDB();
-            analyzer.clear();
-            
-        }
-
-    }
 }

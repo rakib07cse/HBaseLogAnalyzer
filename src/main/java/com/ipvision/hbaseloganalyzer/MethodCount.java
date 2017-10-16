@@ -77,7 +77,7 @@ public class MethodCount implements Analyzer {
                     insertStmt.setLong(2, childEntry.getKey());
                     insertStmt.setLong(3, childEntry.getValue());
                     insertStmt.addBatch();
-                    
+
                     if (++insertRow % batchLimit == 0) {
                         insertStmt.executeBatch();
                         insertStmt.clearBatch();
@@ -98,7 +98,12 @@ public class MethodCount implements Analyzer {
 
     @Override
     public void deleteFromDB(long startTime, long endTime) throws SQLException {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        try (PreparedStatement deleStmt = sqlConnection.prepareStatement(DELETE_METHOD_COUNT)) {
+            deleStmt.setLong(1, startTime);
+            deleStmt.setLong(2, endTime);
+            deleStmt.execute();
+            deleStmt.clearParameters();
+        }
     }
 
 }
