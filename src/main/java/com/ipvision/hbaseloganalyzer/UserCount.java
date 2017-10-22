@@ -78,8 +78,8 @@ public class UserCount implements Analyzer {
 
             }
 
-            String method = logBean.getMethod();
-            String paramValue = logBean.getData();
+            String method = logBean.getMethodName();
+            String paramValue = logBean.getParams();
 
             Long userId = getUserId(paramValue, method);
             if (userId != null) {
@@ -175,7 +175,6 @@ public class UserCount implements Analyzer {
         Long userId = null;
         try {
             if (userIdKey != null) {
-                System.out.println("PamarValue: " + paramValue);
                 Map<String, Object> paramValueMap = gson.fromJson(paramValue, mapType);
                 userId = gson.toJsonTree(paramValueMap.get(userIdKey)).getAsLong();
                 return userId;

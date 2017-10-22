@@ -62,22 +62,24 @@ public class LiveViewerCount implements Analyzer {
         long latestLogTime = 0L;
         Set<Long> viewerIds = new HashSet<>();
         for (LogBean logBean : listLogBean) {
-            if (logBean.getMethod().equalsIgnoreCase("updateStreamViewCount")) {
-                long time = Long.parseLong(logBean.getTimestamp().substring(0, 8));
-                String paramValue = logBean.getData();
-                Long viewerId = getViewerId(paramValue);
-                if (viewerId != null) {
-                    if (latestLogTime != time) {
-                        latestLogTime = time;
-                        viewerIds = getViewerIds(latestLogTime);
-                        long viewerCount = getViewerCount(latestLogTime);
-                        viewerCountMap.put(latestLogTime, viewerCount);
+            if (logBean.getMethodName() != null) {
+                if (logBean.getMethodName().equalsIgnoreCase("updateStreamViewCount")) {
+                    long time = Long.parseLong(logBean.getTimestamp().substring(0, 8));
+                    String paramValue = logBean.getParams();
+                    Long viewerId = getViewerId(paramValue);
+                    if (viewerId != null) {
+                        if (latestLogTime != time) {
+                            latestLogTime = time;
+                            viewerIds = getViewerIds(latestLogTime);
+                            long viewerCount = getViewerCount(latestLogTime);
+                            viewerCountMap.put(latestLogTime, viewerCount);
+                        }
                     }
-                }
-                if (!viewerIds.contains(viewerId)) {
-                    buildViewerEntry(time, viewerId);
-                    viewerIds.add(viewerId);
-                    updateCount(time, 1);
+                    if (!viewerIds.contains(viewerId)) {
+                        buildViewerEntry(time, viewerId);
+                        viewerIds.add(viewerId);
+                        updateCount(time, 1);
+                    }
                 }
             }
         }
@@ -103,7 +105,7 @@ public class LiveViewerCount implements Analyzer {
             deleStmt.execute();
             deleStmt.clearParameters();
         }
-        try(PreparedStatement deleStmt = sqlConnection.prepareStatement(DELETE_VIEWER_COUNT_SQL)){
+        try (PreparedStatement deleStmt = sqlConnection.prepareStatement(DELETE_VIEWER_COUNT_SQL)) {
             deleStmt.setLong(1, startTime);
             deleStmt.setLong(2, endTime);
             deleStmt.execute();

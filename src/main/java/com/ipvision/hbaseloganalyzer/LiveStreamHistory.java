@@ -51,10 +51,10 @@ public class LiveStreamHistory implements Analyzer {
     @Override
     public void processLog(List<LogBean> listLogBean) {
         for (LogBean logBean : listLogBean) {
-            if (logBean.getMethod().equalsIgnoreCase("LiveStreamHistory")) {
+            if (logBean.getLiveStreamHistory().equalsIgnoreCase("LiveStreamHistory")) {
                 String timeStamp = logBean.getTimestamp();
-                String methodParams = logBean.getData();
-                Map<String, Object> dtoValue = gson.fromJson(methodParams, mapType);
+                String liveStreamParams = logBean.getLiveStreamParams();
+                Map<String, Object> dtoValue = gson.fromJson(liveStreamParams, mapType);
                 dtoValue.put("logtime", toTimeStamp(timeStamp));
                 dtoValueStore.add(dtoValue);
             }

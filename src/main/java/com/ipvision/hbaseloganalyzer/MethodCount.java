@@ -47,20 +47,23 @@ public class MethodCount implements Analyzer {
     public void processLog(List<LogBean> listLogBean) {
 
         for (LogBean logBean : listLogBean) {
-            Long time = Long.parseLong(logBean.getTimestamp().substring(0, 10));
-            String method = logBean.getMethod();
+            if (logBean.getMethodName() != null) {
+                Long time = Long.parseLong(logBean.getTimestamp().substring(0, 10));
 
-            HashMap<Long, Long> hm;
-            if (countMap.containsKey(method)) {
-                hm = countMap.get(method);
-            } else {
-                hm = new HashMap<>();
-                countMap.put(method, hm);
-            }
-            if (hm.containsKey(time)) {
-                hm.put(time, hm.get(time) + 1L);
-            } else {
-                hm.put(time, 1L);
+                String method = logBean.getMethodName();
+
+                HashMap<Long, Long> hm;
+                if (countMap.containsKey(method)) {
+                    hm = countMap.get(method);
+                } else {
+                    hm = new HashMap<>();
+                    countMap.put(method, hm);
+                }
+                if (hm.containsKey(time)) {
+                    hm.put(time, hm.get(time) + 1L);
+                } else {
+                    hm.put(time, 1L);
+                }
             }
         }
 

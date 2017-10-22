@@ -19,7 +19,8 @@ import java.util.regex.Pattern;
  *
  * @author rakib
  */
-public class ErrorMessageCount implements Analyzer{
+public class ErrorMessageCount implements Analyzer {
+
     private final Pattern errorPattern = Pattern.compile("^(\\d{17})\\s+(FATAL|ERROR|WARN)\\s+(.*)$");
     private static final String requestIdPattern = " ?" + Tools.UUID_PATTERN;
 
@@ -46,7 +47,10 @@ public class ErrorMessageCount implements Analyzer{
 
     @Override
     public void processLog(List<LogBean> listLogBean) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        
+        for(LogBean logBean:listLogBean){
+            
+        }
     }
 
     @Override
@@ -68,8 +72,8 @@ public class ErrorMessageCount implements Analyzer{
     public void close() throws IOException {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
-    
-      private class MessageWithType extends Object {
+
+    private class MessageWithType extends Object {
 
         private final String type;
         private final String message;

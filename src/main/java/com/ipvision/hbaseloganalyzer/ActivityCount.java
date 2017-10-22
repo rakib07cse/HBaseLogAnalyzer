@@ -76,7 +76,7 @@ public class ActivityCount implements Analyzer {
     public void processLog(List<LogBean> listLogBean) {
         for (LogBean logBean : listLogBean) {
             Long time = Long.parseLong(logBean.getTimestamp().substring(0, 10));
-            String method = logBean.getMethod();
+            String method = logBean.getMethodName();
             if (methodActivityMap.containsKey(method)) {
                 Collection<String> activities = methodActivityMap.get(method);
                 updateCounter(activities, time);

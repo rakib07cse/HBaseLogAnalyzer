@@ -8,6 +8,7 @@ package com.ipvision.hbaselog;
 import com.ipvision.analyzer.hbase.HBaseLogBeanProcessor;
 import com.ipvision.analyzer.hbase.HBaseManager;
 import com.ipvision.analyzer.hbase.HBaseReader;
+import com.ipvision.analyzer.hbase.HBaseWriter;
 import com.ipvision.analyzer.hbase.LogBean;
 import com.ipvision.analyzer.utils.Settings;
 import com.ipvision.analyzer.utils.Tools;
@@ -35,6 +36,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.logging.Level;
 import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.log4j.Logger;
 
@@ -44,7 +46,7 @@ import org.apache.log4j.Logger;
  */
 public class HBaseAnalyzerManager {
 
-    private static final Logger logger = Logger.getLogger(HBaseAnalyzerManager.class);
+    private static  Logger logger = Logger.getLogger(HBaseAnalyzerManager.class);
     private final Connection sqlConnection;
     private List<Analyzer> allAnalyzers = new ArrayList<>();
     private final String DATE_FORMAT = "yyyyMMddHH";
@@ -100,8 +102,9 @@ public class HBaseAnalyzerManager {
 
     public void manageAnalyzer() throws IOException, SQLException, ParseException {
 
-        processRevisitFeatures();
+        //  processRevisitFeatures();
         processCurrent();
+       //process();
 
     }
 
@@ -120,20 +123,37 @@ public class HBaseAnalyzerManager {
         return allAnalyzers;
     }
 
-    private void processCurrent() throws SQLException, IOException {
+    private void processCurrent() throws SQLException {
 
-        HTableDescriptor[] tmpTablenNames = HBaseManager.getHBaseManager().getAdmin().listTables(Tools.HBASE_TMP_TABLE_PATTERN);
-        List<LogBean> listLogBean = null;
-        for (HTableDescriptor tmpTablenName : tmpTablenNames) {
+        HTableDescriptor[] tmpTablenNames;
+        try {
+            tmpTablenNames = HBaseManager.getHBaseManager().getAdmin().listTables(Tools.HBASE_TMP_TABLE_PATTERN);
+            for (HTableDescriptor tmpTablenName : tmpTablenNames) {
+                List<LogBean> listLogBean = new ArrayList<>();
 
-            listLogBean = HBaseReader.processHBaseTable(tmpTablenName);
+                try {
+                    listLogBean = HBaseReader.processHBaseTable(tmpTablenName);
+                } catch (IOException ex) {
+                    logger.error("Error1: ",ex);
+                }
 
-            if (listLogBean != null) {
-                HBaseLogBeanProcessor hbaseLogBeanProcessor = new HBaseLogBeanProcessor();
-                hbaseLogBeanProcessor.processLogBean(listLogBean, allAnalyzers);
+                try {
+                    HBaseWriter.insertIntoHBase(listLogBean);
+                } catch (IOException ex) {
+                    logger.error("Error: "+ex);
+                }
+
+                if (listLogBean != null) {
+                    HBaseLogBeanProcessor hbaseLogBeanProcessor = new HBaseLogBeanProcessor();
+                    hbaseLogBeanProcessor.processLogBean(listLogBean, allAnalyzers);
+
+                }
 
             }
+        } catch (Exception ex) {
+            logger.error("Exit: ",ex);
         }
+
     }
 
     private void processRevisitFeatures() throws SQLException, ParseException {
@@ -156,7 +176,7 @@ public class HBaseAnalyzerManager {
             try {
                 processArchiveReadFeatures(features, startTime, endTime, lookbackTime);
             } catch (Exception ex) {
-                logger.error("",ex);
+                logger.error("", ex);
             }
 
         }
@@ -187,5 +207,10 @@ public class HBaseAnalyzerManager {
 
     private void processArchiveReadFeatures(Collection<String> features, long startTime, long endTime, long lookbackTime) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    private void process() {
+        System.out.println("Hello");
+                
     }
 }

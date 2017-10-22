@@ -91,14 +91,10 @@ public class HBaseManager {
         return null;
     }
 
-    public HBaseAdmin getAdmin() {
+    public HBaseAdmin getAdmin() throws MasterNotRunningException, ZooKeeperConnectionException {
         if (hBaseAdmin == null) {
-            try {
-                hBaseAdmin = new HBaseAdmin(getConfiguration());
-                return hBaseAdmin;
-            } catch (MasterNotRunningException | ZooKeeperConnectionException ex) {
-                logger.error(ex.toString());
-            }
+            hBaseAdmin = new HBaseAdmin(getConfiguration());
+            return hBaseAdmin;
         }
         return hBaseAdmin;
     }
@@ -116,7 +112,9 @@ public class HBaseManager {
             //Instantiating table descriptor class
             HTableDescriptor tableDescriptor = new HTableDescriptor(tableName);
             //Adding Colume table families to table descriptor
-            tableDescriptor.addFamily(new HColumnDescriptor(Tools.HBASE_TABLE_COLUME_FAMILY_NAME));
+            tableDescriptor.addFamily(new HColumnDescriptor(Tools.HBASE_TABLE_METHOD_COLUME_FAMILY_NAME));
+            tableDescriptor.addFamily(new HColumnDescriptor(Tools.HBASE_TABLE_LIVESTREAMHISTORY_COLUME_FAMILY_NAME));
+            tableDescriptor.addFamily(new HColumnDescriptor(Tools.HBASE_TABLE_NOTINFO_COLUME_FAMILY_NAME));
 
             //Execute the table Through admin
             hBaseAdmin.createTable(tableDescriptor);

@@ -50,12 +50,14 @@ public class OnlineUserStatus implements Analyzer {
     public void processLog(List<LogBean> listLogBean) {
 
         for (LogBean logBean : listLogBean) {
-            if (logBean.getMethod().equalsIgnoreCase(methodName)) {
-                long time = Long.parseLong(logBean.getTimestamp());
-                String paramValue = logBean.getData();
-                if (!paramValue.equals("")) {
-                    Map<String, Object> paramMap = stringToMap(paramValue);
-                    userOnlineInfo.put(time, paramMap);
+            if (logBean.getMethodName() != null) {
+                if (logBean.getMethodName().equalsIgnoreCase(methodName)) {
+                    long time = Long.parseLong(logBean.getTimestamp());
+                    String paramValue = logBean.getParams();
+                    if (!paramValue.equals("")) {
+                        Map<String, Object> paramMap = stringToMap(paramValue);
+                        userOnlineInfo.put(time, paramMap);
+                    }
                 }
             }
         }
