@@ -54,10 +54,10 @@ public class HBaseReader {
                     String colName = Bytes.toString(cols);
                     for (long colValue : row.getMap().get(columeFamaily).get(cols).keySet()) {
                         String value = new String(row.getMap().get(columeFamaily).get(cols).get(colValue));
-                        if(colName.equalsIgnoreCase(Tools.HBASE_TABLE_LIVESTREAMHISTORY_FIRST_COLUME_NAME)){
+                        if(colName.equalsIgnoreCase(Tools.HBASE_TABLE_LIVESTREAMHISTORY_SECOND_COLUME_NAME)){
                             logBean.setLiveStreamParams(value);
                         }
-                        if(colName.equalsIgnoreCase(Tools.HBASE_TABLE_LIVESTREAMHISTORY_SECOND_COLUME_NAME)){
+                        if(colName.equalsIgnoreCase(Tools.HBASE_TABLE_LIVESTREAMHISTORY_FIRST_COLUME_NAME)){
                             logBean.setLiveStreamHistory(value);
                         }
                         if (colName.equalsIgnoreCase(Tools.HBASE_TABLE_METHOD_FIRST_COLUME_NAME)) {

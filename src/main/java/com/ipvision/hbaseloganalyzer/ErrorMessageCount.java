@@ -9,9 +9,11 @@ import com.ipvision.analyzer.hbase.LogBean;
 import com.ipvision.analyzer.utils.Tools;
 import java.io.IOException;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.regex.Pattern;
 
@@ -42,20 +44,73 @@ public class ErrorMessageCount implements Analyzer {
 
     @Override
     public void clear() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+       countMap.clear();
     }
 
     @Override
     public void processLog(List<LogBean> listLogBean) {
-        
-        for(LogBean logBean:listLogBean){
-            
+
+        for (LogBean logBean : listLogBean) {
+            if (logBean.getLogLevel().equalsIgnoreCase("ERROR") || logBean.getLogLevel().equalsIgnoreCase("WARN") || logBean.getLogLevel().equalsIgnoreCase("FATAL")) {
+                Long time = Long.parseLong(logBean.getTimestamp().substring(0, 10));
+                String type = logBean.getLogLevel();
+                String text = logBean.getEventType();
+                text = text.replaceAll(requestIdPattern, "");
+                MessageWithType message = new MessageWithType(type, text);
+
+                HashMap<Long, Long> hm;
+                if (countMap.containsKey(message)) {
+                    hm = countMap.get(message);
+                } else {
+                    hm = new HashMap<>();
+                    countMap.put(message, hm);
+                }
+
+                if (hm.containsKey(time)) {
+                    hm.put(time, hm.get(time) + 1L);
+                } else {
+                    hm.put(time, 1L);
+                }
+
+            }
         }
     }
 
     @Override
     public void saveToDB() throws SQLException {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        try (PreparedStatement prepStmt = sqlConnection.prepareStatement(ERR_MSG_COUNT_SQL)) {
+            int batchLimit = Tools.SQL_BATCH_LIMIT;
+            for (Map.Entry<MessageWithType, HashMap<Long, Long>> parentEntry : countMap.entrySet()) {
+                MessageWithType message = parentEntry.getKey();
+                for (Map.Entry<Long, Long> childEntry : parentEntry.getValue().entrySet()) {
+                    Long time = childEntry.getKey();
+                    Long count = childEntry.getValue();
+
+                    String type = message.getType();
+                    prepStmt.setString(1, type);
+                    String text = message.getMessage();
+                    int hashcode = text.hashCode();
+                    prepStmt.setInt(2, hashcode);
+                    prepStmt.setString(3, text);
+                    prepStmt.setLong(4, time);
+                    prepStmt.setLong(5, count);
+
+                    prepStmt.addBatch();
+                    prepStmt.clearParameters();
+
+                    batchLimit -= 1;
+                    
+                    if(batchLimit <=0){
+                        prepStmt.executeBatch();
+                        prepStmt.clearBatch();
+                        batchLimit = Tools.SQL_BATCH_LIMIT;
+                    }
+
+                }
+                prepStmt.executeBatch();
+                prepStmt.clearBatch();
+            }
+        }
     }
 
     @Override

@@ -14,6 +14,8 @@ import com.ipvision.analyzer.utils.Settings;
 import com.ipvision.analyzer.utils.Tools;
 import com.ipvision.hbaseloganalyzer.ActivityCount;
 import com.ipvision.hbaseloganalyzer.Analyzer;
+import com.ipvision.hbaseloganalyzer.ErrorMessageCount;
+import com.ipvision.hbaseloganalyzer.LiveStreamHistory;
 import com.ipvision.hbaseloganalyzer.LiveViewerCount;
 import com.ipvision.hbaseloganalyzer.MethodCount;
 import com.ipvision.hbaseloganalyzer.OnlineUserStatus;
@@ -36,7 +38,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.logging.Level;
 import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.log4j.Logger;
 
@@ -104,7 +105,6 @@ public class HBaseAnalyzerManager {
 
         //  processRevisitFeatures();
         processCurrent();
-       //process();
 
     }
 
@@ -117,6 +117,8 @@ public class HBaseAnalyzerManager {
                 add(new ActivityCount(sqlConnection));
                 add(new UserCount(sqlConnection));
                 add(new LiveViewerCount(sqlConnection));
+                add(new ErrorMessageCount(sqlConnection));
+                add(new LiveStreamHistory(sqlConnection));
 
             }
         };
@@ -207,10 +209,5 @@ public class HBaseAnalyzerManager {
 
     private void processArchiveReadFeatures(Collection<String> features, long startTime, long endTime, long lookbackTime) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    private void process() {
-        System.out.println("Hello");
-                
     }
 }
