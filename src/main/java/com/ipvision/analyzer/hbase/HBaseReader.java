@@ -23,16 +23,12 @@ import org.apache.hadoop.hbase.util.Bytes;
 public class HBaseReader {
 
     public static List<LogBean> processHBaseTable(HTableDescriptor tmpTablenName) throws IOException {
-
-//        HTableDescriptor[] tmpTablenNames = HBaseManager.getHBaseManager().getAdmin().listTables(Tools.HBASE_TMP_TABLE_PATTERN);
         List<LogBean> listLogBean = new ArrayList<>();
         if (HBaseManager.getHBaseManager().getAdmin().isTableEnabled(tmpTablenName.getNameAsString())) {
             listLogBean = readHBaseTable(tmpTablenName.getNameAsString());
             if (!listLogBean.isEmpty()) {
                 HBaseManager.getHBaseManager().getAdmin().disableTable(tmpTablenName.getNameAsString());
             }
-
-            //processLogBean(allAnalyzers, listLogBean);
         }
 
         return listLogBean;
@@ -54,10 +50,10 @@ public class HBaseReader {
                     String colName = Bytes.toString(cols);
                     for (long colValue : row.getMap().get(columeFamaily).get(cols).keySet()) {
                         String value = new String(row.getMap().get(columeFamaily).get(cols).get(colValue));
-                        if(colName.equalsIgnoreCase(Tools.HBASE_TABLE_LIVESTREAMHISTORY_SECOND_COLUME_NAME)){
+                        if (colName.equalsIgnoreCase(Tools.HBASE_TABLE_LIVESTREAMHISTORY_SECOND_COLUME_NAME)) {
                             logBean.setLiveStreamParams(value);
                         }
-                        if(colName.equalsIgnoreCase(Tools.HBASE_TABLE_LIVESTREAMHISTORY_FIRST_COLUME_NAME)){
+                        if (colName.equalsIgnoreCase(Tools.HBASE_TABLE_LIVESTREAMHISTORY_FIRST_COLUME_NAME)) {
                             logBean.setLiveStreamHistory(value);
                         }
                         if (colName.equalsIgnoreCase(Tools.HBASE_TABLE_METHOD_FIRST_COLUME_NAME)) {
@@ -66,13 +62,13 @@ public class HBaseReader {
                         if (colName.equalsIgnoreCase(Tools.HBASE_TABLE_METHOD_SECOND_COLUME_NAME)) {
                             logBean.setParams(value);
                         }
-                        if(colName.equalsIgnoreCase(Tools.HBASE_TABLE_NOTINOF_FIRST_COLUME_NAME)){
+                        if (colName.equalsIgnoreCase(Tools.HBASE_TABLE_NOTINOF_FIRST_COLUME_NAME)) {
                             logBean.setLogLevel(value);
                         }
-                        if(colName.equalsIgnoreCase(Tools.HBASE_TABLE_NOTINFO_SECOND_COLUME_NAME)){
+                        if (colName.equalsIgnoreCase(Tools.HBASE_TABLE_NOTINFO_SECOND_COLUME_NAME)) {
                             logBean.setEventType(value);
                         }
-                        
+
                     }
 
                 }

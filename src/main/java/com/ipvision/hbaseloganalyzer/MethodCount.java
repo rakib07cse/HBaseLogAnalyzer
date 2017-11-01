@@ -5,6 +5,7 @@
  */
 package com.ipvision.hbaseloganalyzer;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.ipvision.analyzer.hbase.LogBean;
 import com.ipvision.analyzer.utils.Tools;
 import java.io.IOException;
@@ -33,6 +34,8 @@ public class MethodCount implements Analyzer {
         this.sqlConnection = sqlConnection;
     }
 
+  
+
     @Override
     public void close() throws IOException {
         clear();
@@ -43,13 +46,13 @@ public class MethodCount implements Analyzer {
         this.countMap.clear();
     }
 
+    @VisibleForTesting
     @Override
-    public void processLog(List<LogBean> listLogBean) {
+    public  void processLog(List<LogBean> listLogBean) {
 
         for (LogBean logBean : listLogBean) {
             if (logBean.getMethodName() != null) {
                 Long time = Long.parseLong(logBean.getTimestamp().substring(0, 10));
-
                 String method = logBean.getMethodName();
 
                 HashMap<Long, Long> hm;
@@ -72,7 +75,6 @@ public class MethodCount implements Analyzer {
     @Override
     public void saveToDB() throws SQLException {
         int batchLimit = Tools.SQL_BATCH_LIMIT;
-        int insertRow = 0;
         try (PreparedStatement insertStmt = sqlConnection.prepareStatement(METHOD_COUNT_SQL)) {
             for (Map.Entry<String, HashMap<Long, Long>> parentEntry : countMap.entrySet()) {
                 for (Map.Entry<Long, Long> childEntry : parentEntry.getValue().entrySet()) {
@@ -80,10 +82,11 @@ public class MethodCount implements Analyzer {
                     insertStmt.setLong(2, childEntry.getKey());
                     insertStmt.setLong(3, childEntry.getValue());
                     insertStmt.addBatch();
-
-                    if (++insertRow % batchLimit == 0) {
+                    batchLimit -= 1;
+                    if (batchLimit <= 0) {
                         insertStmt.executeBatch();
                         insertStmt.clearBatch();
+                        batchLimit = Tools.SQL_BATCH_LIMIT;
                     }
                 }
 

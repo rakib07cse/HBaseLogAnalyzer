@@ -10,6 +10,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import com.ipvision.analyzer.hbase.LogBean;
 import com.ipvision.analyzer.utils.Tools;
+import com.ipvision.hbaselog.HBaseAnalyzerManager;
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.sql.Connection;
@@ -182,7 +183,7 @@ public class LiveViewerCount implements Analyzer {
     }
 
     private void insertViewerEntry() throws SQLException {
-        int insertRow = 0;
+
         int batchLimit = Tools.SQL_BATCH_LIMIT;
 
         try (PreparedStatement prepStmt = sqlConnection.prepareStatement(VIEWER_INSERTION_SQL)) {
@@ -191,9 +192,11 @@ public class LiveViewerCount implements Analyzer {
                     prepStmt.setLong(1, childEntry.getKey());
                     prepStmt.setLong(2, viewerId);
                     prepStmt.addBatch();
-                    if (++insertRow % batchLimit == 0) {
+                    batchLimit -= 1;
+                    if (batchLimit <= 0) {
                         prepStmt.executeBatch();
                         prepStmt.clearBatch();
+                        batchLimit = Tools.SQL_BATCH_LIMIT;
                     }
                 }
             }

@@ -10,6 +10,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import com.ipvision.analyzer.hbase.LogBean;
 import com.ipvision.analyzer.utils.Tools;
+import com.ipvision.hbaselog.HBaseAnalyzerManager;
 
 import java.io.IOException;
 import java.lang.reflect.Type;
@@ -188,7 +189,7 @@ public class UserCount implements Analyzer {
     }
 
     private void insertUserEntry() throws SQLException {
-        int insertRow = 0;
+
         int batchLimit = Tools.SQL_BATCH_LIMIT;
         try (PreparedStatement prepStmt = sqlConnection.prepareStatement(USER_INSERTION_SQL)) {
             for (Map.Entry<Long, Set<Long>> childEntry : userEntry.entrySet()) {
@@ -196,9 +197,13 @@ public class UserCount implements Analyzer {
                     prepStmt.setLong(1, childEntry.getKey());
                     prepStmt.setLong(2, userid);
                     prepStmt.addBatch();
-                    if (++insertRow % batchLimit == 0) {
+                    batchLimit -= 1;
+
+                    if (batchLimit <= 0) {
                         prepStmt.executeBatch();
                         prepStmt.clearBatch();
+                        batchLimit = Tools.SQL_BATCH_LIMIT;
+
                     }
                 }
             }
@@ -210,16 +215,16 @@ public class UserCount implements Analyzer {
 
     private void updateUserCount() throws SQLException {
         int batchLimit = Tools.SQL_BATCH_LIMIT;
-        int insertRow = 0;
         try (PreparedStatement prepStmt = sqlConnection.prepareStatement(INSERT_USER_COUNT_SQL)) {
             for (Map.Entry<Long, Long> entry : userCountMap.entrySet()) {
                 prepStmt.setLong(1, entry.getKey());
                 prepStmt.setLong(2, entry.getValue());
                 prepStmt.addBatch();
-
-                if (++insertRow % batchLimit == 0) {
+                batchLimit -= 1;
+                if (batchLimit <= 0) {
                     prepStmt.executeBatch();
                     prepStmt.clearBatch();
+                    batchLimit = Tools.SQL_BATCH_LIMIT;
                 }
             }
             prepStmt.executeBatch();

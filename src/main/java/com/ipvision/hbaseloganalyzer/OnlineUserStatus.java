@@ -10,6 +10,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import com.ipvision.analyzer.hbase.LogBean;
 import com.ipvision.analyzer.utils.Tools;
+import com.ipvision.hbaselog.HBaseAnalyzerManager;
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.sql.Connection;
@@ -75,7 +76,6 @@ public class OnlineUserStatus implements Analyzer {
 
     @Override
     public void saveToDB() throws SQLException {
-        int insertRow = 0;
         int batchLimit = Tools.SQL_BATCH_LIMIT;
 
         try (PreparedStatement prepStmt = sqlConnection.prepareStatement(USER_INSERTION_SQL)) {
@@ -90,9 +90,12 @@ public class OnlineUserStatus implements Analyzer {
                     continue;
                 }
                 prepStmt.addBatch();
-                if (++insertRow % batchLimit == 0) {
+                batchLimit -= 1;
+                if (batchLimit <= 0) {
                     prepStmt.executeBatch();
                     prepStmt.clearBatch();
+                    batchLimit = Tools.SQL_BATCH_LIMIT;
+
                 }
             }
             prepStmt.executeBatch();

@@ -51,7 +51,7 @@ public class ErrorMessageCount implements Analyzer {
     public void processLog(List<LogBean> listLogBean) {
 
         for (LogBean logBean : listLogBean) {
-            if (logBean.getLogLevel().equalsIgnoreCase("ERROR") || logBean.getLogLevel().equalsIgnoreCase("WARN") || logBean.getLogLevel().equalsIgnoreCase("FATAL")) {
+            if (logBean.getLogLevel()!= null &&(logBean.getLogLevel().equalsIgnoreCase("ERROR") || logBean.getLogLevel().equalsIgnoreCase("WARN") || logBean.getLogLevel().equalsIgnoreCase("FATAL"))) {
                 Long time = Long.parseLong(logBean.getTimestamp().substring(0, 10));
                 String type = logBean.getLogLevel();
                 String text = logBean.getEventType();

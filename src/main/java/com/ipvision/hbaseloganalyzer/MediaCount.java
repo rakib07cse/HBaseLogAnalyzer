@@ -66,7 +66,7 @@ public class MediaCount implements Analyzer {
         for (LogBean logBean : listLogBean) {
             String type = null;
             int count = 0;
-            if (logBean.getMethodName().equalsIgnoreCase("addStatus") || logBean.getMethodName().equalsIgnoreCase("addProfileOrCoverImage")) {
+            if ((logBean.getMethodName() != null) && (logBean.getMethodName().equalsIgnoreCase("addStatus") || logBean.getMethodName().equalsIgnoreCase("addProfileOrCoverImage"))) {
                 Long time = Long.parseLong(logBean.getTimestamp().substring(0, 10));
 
                 if (logBean.getMethodName().equalsIgnoreCase("addStatus")) {

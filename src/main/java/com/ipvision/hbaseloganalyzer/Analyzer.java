@@ -18,7 +18,7 @@ public interface Analyzer extends Closeable {
 
     public void clear();
 
-    public void processLog(List<LogBean> listLogBean);
+    public void  processLog(List<LogBean> listLogBean);
 
     public void saveToDB() throws SQLException;
     public void recalculate(long startTime, long endTime) throws SQLException;

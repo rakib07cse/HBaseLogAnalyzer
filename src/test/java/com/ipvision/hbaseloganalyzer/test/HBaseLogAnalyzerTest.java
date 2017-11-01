@@ -26,7 +26,7 @@ public class HBaseLogAnalyzerTest {
    private static Logger logger = Logger.getLogger(HBaseLogAnalyzerTest.class);
    
     @Test
-    public void hbaseReadTable(){
+    public void testHbaseReadTable(){
       // List<LogBean> listLogBean = HBaseReader.processHBaseTable(HTableDescriptor.META_TABLEDESC)
       HTableDescriptor[] tmpTablenNames;
         try {

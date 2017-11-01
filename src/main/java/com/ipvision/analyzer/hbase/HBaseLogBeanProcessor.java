@@ -8,8 +8,7 @@ package com.ipvision.analyzer.hbase;
 import com.ipvision.hbaseloganalyzer.Analyzer;
 import java.sql.SQLException;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import org.apache.log4j.Logger;
 
 /**
  *
@@ -17,6 +16,7 @@ import java.util.logging.Logger;
  */
 public class HBaseLogBeanProcessor implements Runnable {
 
+    private static final Logger logger = Logger.getLogger(HBaseLogBeanProcessor.class);
     private List<LogBean> listLogBean = null;
     private Thread analyzerThread;
     private Analyzer analyzer;
@@ -29,7 +29,7 @@ public class HBaseLogBeanProcessor implements Runnable {
     public HBaseLogBeanProcessor() {
     }
 
-    public void processLogBean(List<LogBean> listLogBean, List<Analyzer> allAnalyzers) throws SQLException {
+    public void processLogBean(List<LogBean> listLogBean, List<Analyzer> allAnalyzers) throws SQLException, InterruptedException {
 
         HBaseLogBeanProcessor[] hbaseLogBeanProcessor = new HBaseLogBeanProcessor[allAnalyzers.size()];
         int countAnalyzer = 0;
@@ -37,6 +37,12 @@ public class HBaseLogBeanProcessor implements Runnable {
             hbaseLogBeanProcessor[countAnalyzer] = new HBaseLogBeanProcessor(analyzer, listLogBean);
             hbaseLogBeanProcessor[countAnalyzer].start();
 
+            countAnalyzer++;
+
+        }
+        countAnalyzer = 0;
+        for (Analyzer analyzer : allAnalyzers) {
+            hbaseLogBeanProcessor[countAnalyzer].join();
             countAnalyzer++;
 
         }
@@ -49,7 +55,7 @@ public class HBaseLogBeanProcessor implements Runnable {
         try {
             analyzer.saveToDB();
         } catch (SQLException ex) {
-            Logger.getLogger(HBaseReader.class.getName()).log(Level.SEVERE, null, ex);
+            logger.error(ex);
         }
         analyzer.clear();
     }
@@ -59,6 +65,10 @@ public class HBaseLogBeanProcessor implements Runnable {
             analyzerThread = new Thread(this);
             analyzerThread.start();
         }
+    }
+
+    private void join() throws InterruptedException {
+        analyzerThread.join();
     }
 
 }

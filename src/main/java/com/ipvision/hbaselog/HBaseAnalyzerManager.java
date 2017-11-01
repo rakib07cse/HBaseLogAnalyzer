@@ -47,10 +47,12 @@ import org.apache.log4j.Logger;
  */
 public class HBaseAnalyzerManager {
 
-    private static  Logger logger = Logger.getLogger(HBaseAnalyzerManager.class);
+    private static final Logger logger = Logger.getLogger(HBaseAnalyzerManager.class);
     private final Connection sqlConnection;
     private List<Analyzer> allAnalyzers = new ArrayList<>();
     private final String DATE_FORMAT = "yyyyMMddHH";
+
+    public int threadCompleteCount = 0;
 
     public HBaseAnalyzerManager(String configFilepath) throws Exception {
         Properties properties = loadProperties(configFilepath);
@@ -80,6 +82,10 @@ public class HBaseAnalyzerManager {
                 input.close();
             }
         }
+    }
+
+    public Connection getConnection() {
+        return this.sqlConnection;
     }
 
     private Connection createSqlConnection(Properties properties) throws Exception {
@@ -127,33 +133,21 @@ public class HBaseAnalyzerManager {
 
     private void processCurrent() throws SQLException {
 
-        HTableDescriptor[] tmpTablenNames;
+        HTableDescriptor[] tmpTableNames;
+        List<LogBean> listLogBean;
+        HBaseLogBeanProcessor hbaseLogBeanProcessor = new HBaseLogBeanProcessor();
         try {
-            tmpTablenNames = HBaseManager.getHBaseManager().getAdmin().listTables(Tools.HBASE_TMP_TABLE_PATTERN);
-            for (HTableDescriptor tmpTablenName : tmpTablenNames) {
-                List<LogBean> listLogBean = new ArrayList<>();
-
-                try {
-                    listLogBean = HBaseReader.processHBaseTable(tmpTablenName);
-                } catch (IOException ex) {
-                    logger.error("Error1: ",ex);
-                }
-
-                try {
-                    HBaseWriter.insertIntoHBase(listLogBean);
-                } catch (IOException ex) {
-                    logger.error("Error: "+ex);
-                }
-
+            tmpTableNames = HBaseManager.getHBaseManager().getAdmin().listTables(Tools.HBASE_TMP_TABLE_PATTERN);
+            for (HTableDescriptor tmpTableName : tmpTableNames) {
+                listLogBean = HBaseReader.processHBaseTable(tmpTableName);
+                HBaseWriter.insertIntoHBase(listLogBean);
                 if (listLogBean != null) {
-                    HBaseLogBeanProcessor hbaseLogBeanProcessor = new HBaseLogBeanProcessor();
                     hbaseLogBeanProcessor.processLogBean(listLogBean, allAnalyzers);
-
                 }
 
             }
         } catch (Exception ex) {
-            logger.error("Exit: ",ex);
+            logger.error("Exit: ", ex);
         }
 
     }
@@ -210,4 +204,6 @@ public class HBaseAnalyzerManager {
     private void processArchiveReadFeatures(Collection<String> features, long startTime, long endTime, long lookbackTime) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
+    
+
 }
