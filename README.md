@@ -1,3 +1,3 @@
-# ring-hbase-statistics-logger
+# hbase-statistics-logger
 
 ![](HBaseLogAnalyzer.jpg)
